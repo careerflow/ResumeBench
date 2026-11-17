@@ -1,0 +1,101 @@
+[project]
+name = "resume-bench"
+version = "0.1.0"
+description = "ResumeBench: a benchmark for structured resume extraction"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "typer>=0.12",
+  "rich>=13",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "jsonschema>=4.21",
+  "huggingface-hub>=0.23",
+  "pymupdf>=1.24",
+  "pdf2image>=1.16",
+  "tenacity>=8.2",
+  "jinja2>=3.1",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+llamaextract = ["llama-cloud>=1.4"]
+reducto = ["reductoai>=0.13"]
+extend = ["extend-ai>=0.4"]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.30"]
+google = ["google-genai>=1.0"]
+runners = [
+  "resume-bench[llamaextract,reducto,extend,openai,anthropic,google]",
+]
+dev = [
+  "pytest>=8",
+  "pytest-cov",
+  "hypothesis>=6",
+  "respx",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "pre-commit",
+]
+
+[project.scripts]
+resume-bench = "resume_bench.cli:app"
+
+[project.entry-points."resume_bench.providers"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/resume_bench"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle errors
+  "F",    # pyflakes
+  "I",    # isort
+  "W",    # pycodestyle warnings
+  "UP",   # pyupgrade (modern Python syntax)
+  "B",    # flake8-bugbear
+  "SIM",  # flake8-simplify
+  "RUF",  # ruff-specific rules
+]
+ignore = [
+  "E501",    # line length handled by formatter
+  "SIM108",  # ternary operator not always clearer
+  "B008",    # typer uses function calls in argument defaults by design
+  "B027",    # healthcheck is an optional override, not meant to be abstract
+  "RUF001",  # ambiguous Unicode intentional in glyph-folding tables and test fixtures
+  "RUF003",  # ambiguous Unicode in comments intentional (multiplication sign ×)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["resume_bench"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "live: requires API keys and network access",
+]

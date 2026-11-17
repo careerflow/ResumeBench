@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "ResumeBench: A Benchmark for Structured Resume Extraction"
+message: "If you use this benchmark, please cite it using the metadata from this file."
+type: dataset
+authors:
+  - given-names: Puneet
+    family-names: Kohli
+    affiliation: Careerflow
+  - given-names: Shiv
+    family-names: Awasthi
+    affiliation: Careerflow
+  - given-names: Jeffy
+    family-names: Sam
+    affiliation: Careerflow
+repository-code: "https://github.com/careerflow/ResumeBench"
+url: "https://resumebench.ai"
+keywords:
+  - resume parsing
+  - information extraction
+  - benchmark
+  - structured extraction
+  - document understanding
+  - NLP
+license: Apache-2.0
+date-released: "2026-11-17"
