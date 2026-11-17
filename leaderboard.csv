@@ -1,0 +1,19 @@
+rank,system,type,f1,cost_per_page,latency_s,split,scored_by
+1,LlamaParse Extract Agentic Plus,API,87.1572,0.054,69.7,full_300,resumebench.ai
+2,Reducto Deep Extract,API,85.5526,0.040,64.8,full_300,resumebench.ai
+3,LlamaParse Extract Agentic,API,85.5463,0.023,54.6,full_300,resumebench.ai
+4,Claude Opus 4.8,LLM,85.5052,0.090,31.3,full_300,resumebench.ai
+5,Gemini 3.5 Flash,LLM,85.4518,0.035,42.8,full_300,resumebench.ai
+6,GPT-5.6,LLM,84.7483,0.060,38.5,full_300,resumebench.ai
+7,Extend Max Context,API,84.7241,0.030,45.2,full_300,resumebench.ai
+8,Qwen 3.8 Flash,LLM,84.0787,0.004,22.1,full_300,resumebench.ai
+9,Qwen 3.8 27B,LLM,83.7681,0.003,18.6,full_300,resumebench.ai
+10,LlamaParse Extract Cost-Effective,API,83.5164,0.009,32.4,full_300,resumebench.ai
+11,GPT-5.5,LLM,83.5022,0.045,35.2,full_300,resumebench.ai
+12,Reducto Extract,API,81.6959,0.020,28.3,full_300,resumebench.ai
+13,Extend Extract,API,80.9701,0.015,33.1,full_300,resumebench.ai
+14,Qwen 3.5 35B,LLM,77.9481,0.002,15.8,full_300,resumebench.ai
+15,Qwen 3.5 9B,LLM,76.0312,0.001,10.2,full_300,resumebench.ai
+16,Gemma 4 26B,LLM,62.8207,0.003,19.4,full_300,resumebench.ai
+17,GPT-5.4 Nano,LLM,61.8600,0.008,12.5,full_300,resumebench.ai
+18,GLM 5.3 Flash,LLM,59.2403,0.002,14.3,full_300,resumebench.ai
