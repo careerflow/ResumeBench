@@ -112,7 +112,7 @@ SECTION_SCHEMA_FIELDS: dict[str, list[str]] = {
         "summary",
     ],
     "publications": ["name", "publisher", "date", "summary"],
-    "languages": ["name", "level"],
+    "languages": ["name"],
     "interests": ["name"],
     "profiles": ["network", "url"],
     "customSections": ["sectionTitle", "summary"],
@@ -287,7 +287,7 @@ def _rb_align_entities(
 
 _GLYPHS = str.maketrans(
     {
-        **{c: "-" for c in "‐‑‒–—―−"},
+        **{c: "-" for c in "‐‑‒–—―−•*"},
         **{c: "'" for c in "‘’‚‛′ʼ"},
         **{c: '"' for c in "“”„‟″"},
         "­": None,
@@ -310,6 +310,14 @@ def normalize(s: object) -> str:
 # ---------------------------------------------------------------------------
 # Scoring helpers
 # ---------------------------------------------------------------------------
+
+
+_POSSESSIVE_RE = re.compile(r"[''’]s$", re.IGNORECASE)
+
+
+def _normalize_study_type(s: str) -> str:
+    """Strip possessive markers from degree names: Bachelor's → Bachelor."""
+    return _POSSESSIVE_RE.sub("", normalize(s))
 
 
 def _str_match(a: object, b: object) -> float:
@@ -349,6 +357,10 @@ def _field_passes(fname: str, gv: object, pv: object) -> bool:
     ps = str(pv if pv is not None else "")
     if fname in CONTACT_FIELDS or fname in LOCATION_FIELDS:
         return normalize(gs).lower() == normalize(ps).lower()
+    if fname == "studyType":
+        return _normalize_study_type(gs) == _normalize_study_type(ps)
+    if fname == "sectionTitle":
+        return normalize(gs).rstrip(":") == normalize(ps).rstrip(":")
     return _str_match(gs, ps) == 1.0
 
 

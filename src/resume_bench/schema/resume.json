@@ -103,7 +103,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -192,7 +192,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -267,7 +267,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -348,7 +348,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "text": {
           "type": ["string", "null"],
@@ -361,7 +361,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -405,7 +405,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -419,7 +419,7 @@
               },
               "awarder": {
                 "type": ["string", "null"],
-                "description": "Organization that granted the award"
+                "description": "Organization that granted the award. Must be a clearly named organization — do not infer or extract generic descriptions like 'the Institute', 'a regional publication', or 'a business journal' from surrounding sentence context. null if no specific organization is named."
               },
               "date": {
                 "type": ["string", "null"],
@@ -427,7 +427,7 @@
               },
               "summary": {
                 "type": ["string", "null"],
-                "description": "Additional description of the award. Null if none."
+                "description": "Additional description of the award. Only include if the resume provides a separate descriptive sentence or clause about the award — do not extract sentence fragments like durations ('3 consecutive years') or timing phrases ('shortly after founding') as summaries. null if none."
               },
               "url": {
                 "type": "object",
@@ -453,7 +453,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -524,7 +524,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -551,7 +551,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -585,7 +585,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -611,7 +611,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",
@@ -633,7 +633,7 @@
       "properties": {
         "sectionTitle": {
           "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase — but strip trailing punctuation such as colons or periods. null if no heading is visible."
         },
         "items": {
           "type": "array",

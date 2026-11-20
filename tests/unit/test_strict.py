@@ -70,6 +70,18 @@ class TestFieldPasses:
     def test_entity_name_matches_exactly(self):
         assert _field_passes("company", "Google", "Google") is True
 
+    def test_section_title_colon_stripped(self):
+        assert _field_passes("sectionTitle", "EDUCATION", "EDUCATION:") is True
+
+    def test_section_title_both_colons(self):
+        assert _field_passes("sectionTitle", "EDUCATION:", "EDUCATION:") is True
+
+    def test_section_title_neither_colon(self):
+        assert _field_passes("sectionTitle", "EDUCATION", "EDUCATION") is True
+
+    def test_section_title_mismatch(self):
+        assert _field_passes("sectionTitle", "EDUCATION", "EXPERIENCE") is False
+
 
 # ---------------------------------------------------------------------------
 # _identity_pass_rate
