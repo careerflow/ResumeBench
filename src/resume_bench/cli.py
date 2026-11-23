@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from enum import Enum
 from pathlib import Path
 
 import typer
@@ -10,6 +11,14 @@ from rich.console import Console
 from rich.table import Table
 
 from resume_bench.settings import settings
+
+
+class Scorer(str, Enum):
+    v5 = "v5"
+    strict = "strict"
+
+
+SCORER_HELP = "Scorer: v5 (canonical comparison) or strict (original release)"
 
 app = typer.Typer(
     name="resume-bench",
@@ -102,20 +111,22 @@ def grade(
     pipelines: list[str] = typer.Argument(..., help="Pipeline names to grade"),
     split: str = typer.Option("test", help="Dataset split"),
     gate: float = typer.Option(1.0, "--gate", help="Identity gate threshold"),
+    scorer: Scorer = typer.Option(Scorer.v5, "--scorer", help=SCORER_HELP),
 ):
     """Grade extraction results against ground truth."""
     from resume_bench.grading.grader import grade_pipelines_strict
 
-    console.print(f"Grading {len(pipelines)} pipeline(s) [gate={gate}]...")
+    console.print(f"Grading {len(pipelines)} pipeline(s) (gate={gate}, scorer={scorer.value})...")
 
     reports = grade_pipelines_strict(
         pipeline_names=pipelines,
         split=split,
         gate=gate,
+        scorer=scorer.value,
     )
 
     for name, report in reports.items():
-        console.print(f"\n[bold]{name}[/bold]")
+        console.print(f"\n[bold]{name}[/bold] (scorer {scorer.value})")
         console.print(f"  Macro F1:  {report['macro_f1']:.4f}")
         console.print(
             f"  Units:     {report['total_units']['correct']}"
@@ -128,13 +139,22 @@ def grade(
 @app.command()
 def leaderboard(
     split: str = typer.Option("test", help="Dataset split"),
+    scorer: Scorer = typer.Option(Scorer.v5, "--scorer", help="Grades from this scorer"),
 ):
     """Show the ResumeBench leaderboard."""
+    from resume_bench.grading.grader import grades_path
+
+    scorer = Scorer(scorer)
     output_dir = settings.output_dir
     rows: list[tuple[str, float, int]] = []
 
     for pipeline_dir in sorted(output_dir.iterdir()):
-        grades_dir = pipeline_dir / split / "grades"
+        grades_dir = grades_path(pipeline_dir.name, split, scorer.value)
+        if not grades_dir.exists() and any((pipeline_dir / split / "grades").glob("*.grade.json")):
+            console.print(
+                f"[yellow]{pipeline_dir.name}: grades from before v5 are not read; "
+                f"re-grade with 'grade --scorer {scorer.value}'.[/yellow]"
+            )
         if not grades_dir.exists():
             continue
 
@@ -149,12 +169,12 @@ def leaderboard(
             rows.append((pipeline_dir.name, macro_f1, len(f1s)))
 
     if not rows:
-        console.print("[yellow]No grades found. Run 'grade' first.[/yellow]")
+        console.print(f"[yellow]No grades from scorer '{scorer.value}'. Run 'grade' first.[/yellow]")
         return
 
     rows.sort(key=lambda r: r[1], reverse=True)
 
-    table = Table(title=f"ResumeBench Leaderboard ({split})")
+    table = Table(title=f"ResumeBench Leaderboard ({split}, scorer {scorer.value})")
     table.add_column("Rank", justify="right")
     table.add_column("Pipeline")
     table.add_column("Macro F1", justify="right")
@@ -171,6 +191,7 @@ def grade_file(
     predictions_path: Path = typer.Argument(..., help="JSONL file with predictions"),
     split: str = typer.Option("test", help="Dataset split for ground truth"),
     gate: float = typer.Option(1.0, "--gate", help="Identity gate threshold"),
+    scorer: Scorer = typer.Option(Scorer.v5, "--scorer", help=SCORER_HELP),
 ):
     """Grade a predictions JSONL file against ground truth.
 
@@ -204,7 +225,7 @@ def grade_file(
         if pred is None:
             console.print(f"  [yellow]Missing prediction for {rid}[/yellow]")
             continue
-        result = grade_single_strict(gt, pred, gate=gate)
+        result = grade_single_strict(gt, pred, gate=gate, scorer=scorer.value)
         result["resume_id"] = rid
         results.append(result)
 
@@ -219,7 +240,7 @@ def grade_file(
     total_expected = sum(r["expected"] for r in results)
     total_predicted = sum(r["predicted"] for r in results)
 
-    table = Table(title=f"ResumeBench Results ({len(results)} resumes)")
+    table = Table(title=f"ResumeBench Results ({len(results)} resumes, scorer {scorer.value})")
     table.add_column("Metric", style="bold")
     table.add_column("Value", justify="right")
 
@@ -236,10 +257,11 @@ def grade_file(
 def report(
     split: str = typer.Option("test", help="Dataset split"),
     pipelines: list[str] | None = typer.Option(None, help="Filter to specific pipelines"),
+    scorer: Scorer = typer.Option(Scorer.v5, "--scorer", help="Grades from this scorer"),
 ):
     """Generate leaderboard report from graded results."""
     console.print("[yellow]Report generation uses 'leaderboard' command.[/yellow]")
-    leaderboard(split=split)
+    leaderboard(split=split, scorer=scorer)
 
 
 @app.command()
