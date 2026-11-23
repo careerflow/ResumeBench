@@ -97,7 +97,11 @@ The full benchmark covers 300 curated resumes (837 pages) across real-world anon
 
 ## Scoring
 
-Scoring is per-field with identity-gated matching:
+`resume-bench grade` uses the v2 scorer by default (`src/resume_bench/grading/canonical.py`): differences in
+presentation only, such as "Bachelor" vs "Bachelor's" or ALL-CAPS styling, are not counted as errors. The leaderboard
+above and the rules below are from the original scorer; `--scorer strict` scores outputs with it.
+
+Original scorer rules (per-field, identity-gated matching):
 
 | Rule | Effect |
 |---|---|

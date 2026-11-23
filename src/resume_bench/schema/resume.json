@@ -1,186 +1,304 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "resume",
-  "x-benchmark-version": "1.0",
+  "x-benchmark-version": "2.0",
   "type": "object",
+  "description": "ResumeBench v2 resume extraction target, used with the v2 system prompt (which states every rule in full). Fill every field the resume prints, copied verbatim; use null (an empty list for a list) when it is not printed; an empty string counts as null. Comparison in short: letter case counts, except that ALL-CAPS text (two or more letters, all capitals) equals the same text in any case (email, phone, linkedinUrl (see there), city/state/country, the profiles network and the degree ignore case); in every text value except linkedinUrl (compared as a URL) a run of whitespace counts as one space, and spaces at either end, one or more of . , ; : at the end, , ; : at the start, a leading \".\" unless an ASCII letter follows it (\".NET\" keeps it), dash and quote variants, Unicode compatibility forms, soft hyphens, zero-width characters and the markdown markers ** and __ are ignored; list markers are ignored at the start of description items, custom-section lines and skills items, and on every line of a multi-line text value (personalSummary, roleDescription, a summary) when at least two lines carry one; booleans count only when true. Fields whose description starts with UNSCORED are never compared.",
   "properties": {
     "basics": {
       "type": "object",
-      "description": "Basic personal and contact information",
+      "description": "The resume owner's name, contact details, own location, photo and LinkedIn URL, wherever they are printed (a line of a Personal Details section that fills one of these fields goes here only). Scored: the full name (prefix + fname + lname + suffix as one value), email, phone, city/state/country, hasPersonalPhoto and linkedinUrl.",
       "properties": {
         "prefix": {
-          "type": ["string", "null"],
-          "description": "Name prefix or honorific (e.g. 'Dr.', 'Mr.', 'Ms.', 'Prof.'). Null if no prefix is present."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Title printed before the name, as printed (e.g. \"Dr.\", \"Prof.\", a military rank). Null if none. Scored as part of the full name (see lname)."
         },
         "fname": {
-          "type": ["string", "null"],
-          "description": "First name of the person, including any middle names or initials. Split the full name into first and last — everything before the final surname token is the first name. For 'John Michael Smith', fname is 'John Michael'. For 'ALASTAIR K BIDWELL', fname is 'ALASTAIR K'. For 'Jean Marie Schiraldi', fname is 'Jean Marie'. If only one name token exists, put it in fname and leave lname null."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Given name(s) when clear, as printed, with middle names, initials and a nickname printed with them: \"John Michael\" from \"John Michael Smith\", \"Wei (Victor)\" from \"DENG Wei (Victor)\". Copy each name part as printed, its words in printed order. If only one name token is printed, put it here and leave lname null."
         },
         "lname": {
-          "type": ["string", "null"],
-          "description": "Last name (surname) of the person. The final surname token from the full name. Do not include middle names or initials. For 'John Michael Smith', lname is 'Smith'. For 'ALASTAIR K BIDWELL', lname is 'BIDWELL'. For 'Jean Marie Schiraldi', lname is 'Schiraldi'. For compound surnames like 'Van der Berg' or 'De la Cruz', treat the full compound as lname."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Family name as printed, including compound surnames (\"Van der Berg\", \"Al Suwaidi\"). The full name is compared as one value made of the words of prefix + fname + lname + suffix: which part holds a word, and the order of the words, are not scored (\"DENG Wei (Victor)\" = \"Wei (Victor) DENG\"); every word counts, and so does letter case, judged on the whole name (\"DENG\" printed in capitals stays \"DENG\")."
         },
         "suffix": {
-          "type": ["string", "null"],
-          "description": "Name suffix or post-nominal (e.g. 'Jr.', 'III', 'MD', 'PhD', 'P.Eng.', 'CPA'). Null if no suffix is present."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What is printed right after the name, as printed: \"Jr.\", \"III\", \"MD\", \"PhD\", \"Esq.\", \"CPA\". Null if none. Scored as part of the full name (see lname)."
         },
         "email": {
-          "type": ["string", "null"],
-          "description": "Primary email address"
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Email address as printed (compared ignoring case)."
         },
         "phone": {
-          "type": ["string", "null"],
-          "description": "Phone number exactly as written in the resume, including country code if present"
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Phone number exactly as printed, including country code, brackets, spaces and separators."
         },
         "city": {
-          "type": ["string", "null"],
-          "description": "City from the person's location (e.g. 'New York' from 'New York, NY, USA'). Extract only the city name, not state or country."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "City part of the person's own location, as printed (e.g. \"New York\" from \"New York, NY, USA\"). city, state and country are compared as one set of parts, ignoring case: a part in another slot is not penalized, a missing or extra part is. Every printed part must be its own value (\"Austin, TX\" in city matches neither part); copy parts as printed (no expansion such as \"NY\" -> \"New York\", no translation) and do not infer a part that is not printed (no country from a city)."
         },
         "state": {
-          "type": ["string", "null"],
-          "description": "State, province, or region from the person's location (e.g. 'NY' from 'New York, NY, USA'). Extract only the state/province, not city or country."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "State, province or region part of the person's own location, as printed (e.g. \"NY\"). Null if not printed. Compared as part of the location set (see city)."
         },
         "country": {
-          "type": ["string", "null"],
-          "description": "Country from the person's location (e.g. 'USA' from 'New York, NY, USA'). Extract only the country name."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Country part of the person's own location, as printed (e.g. \"USA\"). Null if not printed; never inferred. Compared as part of the location set (see city)."
         },
         "hasPersonalPhoto": {
-          "type": ["boolean", "null"],
-          "description": "true if the resume contains a personal profile photo or headshot. false if there is no personal photo. Look for embedded images that appear to be portrait/headshot photographs of a person, typically near the top of the resume or in a sidebar. Do not count logos, icons, decorative graphics, or certification badges."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "true only if the resume shows a photograph of the person (portrait or headshot); logos, icons, decorative graphics and badges do not count. Otherwise false or null (they count the same: only true is compared)."
         },
         "linkedinUrl": {
-          "type": ["string", "null"],
-          "description": "LinkedIn profile URL, if present in the resume."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "LinkedIn profile URL as printed. A printed handle or partial path (\"/in/jane-doe\", or \"jane-doe\" next to a LinkedIn icon) is the printed URL: copy it as printed; null if only a word or an icon is printed (the URL sits only in a link). Compared as a URL, on everything after the scheme: the scheme, a leading \"www.\", trailing \"/\" and letter case are ignored in the host and in linkedin.com paths (a handle or partial path without a host, such as \"in/Jane-Doe\", ignores case too); case counts in a partial path that starts with \"/\" and in short links such as lnkd.in; nothing else is folded, so a query (?...), a fragment (#...), another subdomain (\"in.linkedin.com\"), a trailing \".\" or a dash variant counts. LinkedIn never goes in profiles."
         },
         "targetJobTitle": {
-          "type": ["string", "null"],
-          "description": "Desired or target job title ONLY if explicitly written as a headline, objective, or target role label at the top of the resume (e.g. 'Seeking: Software Engineer', 'Objective: Data Analyst'). Must be copied VERBATIM from the document. Set to null if no explicit target/desired title is present. Do NOT infer or fabricate from work experience, current job title, or any other section. If in doubt, set to null."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The headline or target title printed with the name at the top of the resume, as printed (e.g. \"Principal Architect - Cloud Platforms\"; \"Data Analyst\" from \"Objective: Data Analyst\"). Null if none. Never derived from the work history."
         },
         "dob": {
-          "type": ["string", "null"],
-          "description": "Date of birth as written in the resume. Null if not stated."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). Date of birth as printed (also from a Personal Details section). Null if not printed."
         },
         "gender": {
-          "type": ["string", "null"],
-          "description": "Gender as stated in the resume. Null if not stated."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). Gender as printed (also from a Personal Details section). Null if not printed."
         },
         "nationality": {
-          "type": ["string", "null"],
-          "description": "Nationality or citizenship as stated. Null if not stated."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). Nationality or citizenship as printed (also from a Personal Details section). Null if not printed."
         },
         "address": {
-          "type": ["string", "null"],
-          "description": "Street address (not city/state/country, which have their own fields). Null if not stated."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). Street address as printed (also from a Personal Details section); city/state/country have their own fields. Null if not printed."
         },
         "postalCode": {
-          "type": ["string", "null"],
-          "description": "ZIP or postal code. Null if not stated."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). ZIP or postal code as printed (also from a Personal Details section). Null if not printed."
         },
         "openToRemote": {
-          "type": ["boolean", "null"],
-          "description": "true if the candidate indicates openness to remote work. Null if not stated."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). true only if the resume states openness to remote work; otherwise null."
         },
         "openToRelocate": {
-          "type": ["boolean", "null"],
-          "description": "true if the candidate indicates willingness to relocate. Null if not stated."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). true only if the resume states willingness to relocate; otherwise null."
         },
         "openToOnSite": {
-          "type": ["boolean", "null"],
-          "description": "true if the candidate indicates openness to on-site work. Null if not stated."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). true only if the resume states openness to on-site work; otherwise null."
         },
         "openToHybrid": {
-          "type": ["boolean", "null"],
-          "description": "true if the candidate indicates openness to hybrid work. Null if not stated."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). true only if the resume states openness to hybrid work; otherwise null."
         },
         "openToTravel": {
-          "type": ["boolean", "null"],
-          "description": "true if the candidate indicates willingness to travel. Null if not stated."
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). true only if the resume states willingness to travel; otherwise null."
         }
       }
     },
     "experience": {
       "type": "object",
+      "description": "Work history: one item per role (jobs, internships, part-time and contract roles) from work-history sections, with employer and title; never from summary or profile prose. A separately headed compact list of roles without responsibilities (\"Earlier Career\", a \"Career Summary\" timeline) goes to customSections; if the same roles also appear in a detailed work history, take one item per role from the detailed one. Empty items list if the resume has no work history.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "Structured roles from experience sections. Only include roles from dedicated work-history sections with employer, title, dates, and responsibilities. Never include roles inferred from narrative summary, profile, or objective sections.",
+          "description": "Roles in printed order. Several titles under one employer with their own dates are separate items; start a new item only where a new role begins.",
           "items": {
             "type": "object",
             "properties": {
               "company": {
-                "type": ["string", "null"],
-                "description": "Name of employer or company"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: experience entries are paired on company + position, so a differing value loses the entry. Employer name exactly as printed in the entry."
               },
               "position": {
-                "type": ["string", "null"],
-                "description": "Job title or role only, copied exactly from a structured experience entry. Do not take titles from narrative summary/profile/custom sections, and do not append text from compact timelines, adjacent dates, locations, or other fields."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: job title exactly as printed in the entry, with nothing appended (no dates, locations or text from other lines) and never taken from the summary."
               },
               "startMonth": {
-                "type": ["integer", "null"],
-                "description": "Month the role started as an integer 1-12 (e.g. January = 1, December = 12). Parse from date strings like 'May 2025' -> 5. Null if no start month is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the role started, integer 1-12 (January = 1). Null if no month is printed (year only, season or quarter)."
               },
               "startYear": {
-                "type": ["integer", "null"],
-                "description": "Year the role started as a 4-digit integer (e.g. 2025). Parse from date strings. Null if no start year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the role started, 4-digit integer. For an ongoing entry (\"2020 - Present\", \"Since 2020\") the printed date is the start. Null if not printed. If only ONE date is printed and the entry is not ongoing, it is the end date (endMonth/endYear), not the start."
               },
               "endMonth": {
-                "type": ["integer", "null"],
-                "description": "Month the role ended as an integer 1-12. Null if the role is ongoing or no end month is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the role ended, integer 1-12. Null if ongoing or if no end month is printed."
               },
               "endYear": {
-                "type": ["integer", "null"],
-                "description": "Year the role ended as a 4-digit integer. Null if the role is ongoing or no end year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the role ended, 4-digit integer; a single printed date of an entry that is not ongoing goes here. Null if ongoing (currentlyWorkHere true) or if no end is printed. (When the ground truth has a single date, that date is also accepted in the start fields or in both.)"
               },
               "currentlyWorkHere": {
-                "type": ["boolean", "null"],
-                "description": "true if this is the person's current role (end date is 'Present', 'Current', or ongoing). false otherwise."
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "true if the role is ongoing (\"Present\", \"Current\", \"Now\", \"Since 2020\", an open range \"2020 -\"). Otherwise false or null (they count the same: only true is compared)."
               },
               "location": {
-                "type": ["string", "null"],
-                "description": "Full location of the role as written in the resume (e.g. 'New York, NY, USA', 'London, UK', 'Remote'). Extract verbatim. Null if no location is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "UNSCORED (never compared). The full location of the entry as printed (e.g. \"New York, NY, USA\"). Null if none."
               },
               "city": {
-                "type": ["string", "null"],
-                "description": "City where the role is located (e.g. 'New York' from 'New York, NY'). Null if no city is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "City (or town/district) part of the location printed with the role, as printed. city, state and country are compared as one set of parts, ignoring case: a part in another slot is not penalized, a missing or extra part is. Every printed part must be its own value (\"Austin, TX\" in city matches neither part); copy parts as printed (no expansion such as \"NY\" -> \"New York\", no translation) and do not infer a part that is not printed (no country from a city). \"Remote\" is not a city (see isRemote)."
               },
               "state": {
-                "type": ["string", "null"],
-                "description": "State, province, or region where the role is located (e.g. 'NY' from 'New York, NY'). Null if no state is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "State, province or region part of the location printed with the role, as printed (e.g. \"NY\" from \"New York, NY\"). Null if not printed. Compared as part of the location set (see city)."
               },
               "country": {
-                "type": ["string", "null"],
-                "description": "Country where the role is located. Null if no country is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Country part of the location printed with the role, as printed (e.g. \"USA\" from \"New York, NY, USA\"). Null if not printed; never inferred. Compared as part of the location set (see city)."
               },
               "isRemote": {
-                "type": ["boolean", "null"],
-                "description": "true if the role is marked as remote. Look for keywords like 'Remote', 'Work from Home', 'WFH', 'Telecommute' in the location line, job title, or anywhere in the role entry. null if not indicated."
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "true only if the role is marked remote (\"Remote\", \"Work from Home\", \"WFH\", \"Telecommute\"). Otherwise false or null (they count the same: only true is compared)."
               },
               "roleDescription": {
-                "type": ["string", "null"],
-                "description": "Non-bulleted prose text that appears within an experience entry — typically BEFORE the bullet points but can also appear after them. This is continuous paragraph text (no bullet symbols, no dashes, no numbered lists). It includes introductory paragraphs, role overviews, background context, or any free-form text blocks within the role entry. Copy the text VERBATIM from the resume — do not rephrase, summarize, or paraphrase. Concatenate multiple prose paragraphs with newlines. CRITICAL DISTINCTION: roleDescription = continuous prose paragraphs (no bullet markers); description[] = individual bullet points (lines with bullet markers). Never put bullet-point content in roleDescription, and never put prose paragraphs in the description array. Set to null if the role has NO prose text (only bullets or nothing)."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Unbulleted prose printed inside the entry, verbatim; paragraphs separated by newlines (the breaks between paragraphs are not compared). Null if the role has no prose. Compared as one string. If the prose is written as the first description line(s) instead, the scorer moves those lines here when, joined, they equal the prose; never put prose between bullets. Printed bullets written here as one paragraph count as one merged description line."
               },
               "companyUrl": {
                 "type": "object",
+                "description": "UNSCORED (never compared). Link printed on the employer name: href = the URL if it is printed (otherwise null), label = the visible text of the link. Null if no link is printed.",
                 "properties": {
                   "href": {
-                    "type": ["string", "null"],
-                    "description": "URL address (link target)"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). URL as printed; null if only the linked text is visible."
                   },
                   "label": {
-                    "type": ["string", "null"],
-                    "description": "The visible display text or label for this URL as shown in the resume."
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). Visible text of the link as printed."
                   }
-                },
-                "description": "Company website or profile URL if the resume visibly links the employer name. Preserve the visible label and href exactly as shown. Set both href and label to null if no company link is present."
+                }
               },
               "description": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "Array of individual bullet-point achievements or responsibilities. Each array element is one bullet. Do NOT include any text that already appears in roleDescription. A bullet may wrap onto multiple visual lines; keep continuation lines in the same element. Strip bullet symbols (-, *, •, etc.) but preserve the complete visible text."
+                "description": "Bullet points of the role, one string per printed bullet, verbatim; a wrapped bullet stays one string, and a sub-heading inside the entry is its own line, in place. Compared as an unordered set of lines: order is not scored, and list markers at the start of a line are ignored (one bullet glyph or symbol such as • ▪ ➤ ◆ ✔ 🚀, with or without a space; a dash or \"*\" followed by a space or tab; \"1.\", \"1)\" or \"(1)\" with one or two digits, followed by a space or tab and a non-digit); leave them out. Merging or splitting lines is credited as the smaller line count only when the entry's lines, joined in order, are otherwise identical and one side's line breaks are a subset of the other's (a moved break or a merge combined with a reordering is not credited); otherwise the merged or split lines count as missed and extra.",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -189,73 +307,118 @@
     },
     "education": {
       "type": "object",
+      "description": "Formal education: degrees, diplomas and academic programs from universities, colleges and schools. Certifications, licenses, training courses, workshops and memberships are not education entries; a membership line printed inside an education entry stays in its description. Empty items list if the resume has none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of formal education entries — degrees, diplomas, and academic programs from universities, colleges, and schools. Do NOT include professional certifications, licenses, training courses, workshops, or professional memberships here — those belong in the certifications section.",
+          "description": "One item per program, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "institution": {
-                "type": ["string", "null"],
-                "description": "Name of the educational institution, professional body, or issuing organization"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: education entries are paired on institution + degree level (the level is read from studyType and area; a level that cannot be read, or \"other\", pairs with any; two different known levels never pair, so the whole entry is lost). Name of the school, college or university exactly as printed."
               },
               "area": {
-                "type": ["string", "null"],
-                "description": "Field of study or major"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Field of study, major or specialization as printed (e.g. \"Computer Science\"). Compared together with studyType as one degree (see studyType); \"CS\", \"IT\" or \"EE\" here equal the spelled-out field, and the order of the field words is not scored. Do not repeat words that are already in studyType."
               },
               "studyType": {
-                "type": ["string", "null"],
-                "description": "Type of credential — degree, diploma, certification, membership, affiliation, license, or professional registration (e.g. Bachelor's, Master's, PhD, Associate's, High School Diploma, Affiliate Membership, Professional Registration, License)"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The degree words as printed, e.g. \"Bachelor of Science\", \"B.S.\", \"Master's\", \"MBA\", \"Ph.D.\", \"High School Diploma\", \"Diploma\". Null if no degree is printed (then the program or field goes in area). studyType and area are compared together as ONE degree: level + degree type + field, folding letter case, accents, punctuation, possessives, the plurals Bachelors/Masters/Associates, Levels and GCSEs (no other plurals) and a degree abbreviation at the start of studyType (\"B.S.\" = \"BSc\" = \"Bachelor of Science\", \"Bachelor's\" = \"Bachelors\", \"MBA\" = \"Master of Business Administration\"); an abbreviation after a word that is not a degree (\"Executive MBA\", \"Pursuing B.S.\"; a second degree after a comma, as in \"B.S., MBA\", is read as a degree) and school-leaving or diploma abbreviations (HSC, GED, HND) are compared as written; these degree abbreviations that include the field equal their spelled-out form: BSN, BScN, BSBA, BSE, BSCS, BSEE, BSME, BSCE, BSIT, MSN, MSE, MSF, MSCS, MSEE, MSME, MSIT, MSDS (\"BSN\" = \"Bachelor of Science in Nursing\"); other such abbreviations are compared as written (\"MSIS\" stays \"MSIS\"). A bracketed degree abbreviation that restates the same degree is ignored (\"Bachelor of Science (B.S.)\" = \"Bachelor of Science\", \"Master of Engineering (M.E.)\" = \"Master of Engineering\"); school-leaving and diploma abbreviations in brackets (\"(HSC)\", \"(SSC)\", \"(HND)\", \"(PGDM)\", \"(GCSE)\") count as written, so copy them exactly as printed. Between degree and field, a comma, colon, slash, brackets, \"|\", \"in\", \"&\", \"with\", a dash or no separator count the same (\"Bachelor of Science Nursing\" = \"Bachelor of Science in Nursing\"); words in front of the type make a different type (\"Bachelor of Applied Science\" is not \"Bachelor of Science\" + \"Applied Mathematics\"). Ignored: filler words (degree, major, concentration, specialization, expected, pursuing, full-time, and, of ...), the order of the field words (a minor written as \"Minor: X\", \"Minors: X\" or \"Minor in X\" stays a minor: \"Economics, Minor: Statistics\" is not \"Statistics, Minor: Economics\"; several minors may come in any order), a printed year and everything from \"GPA\", \"CGPA\" or \"percentage\" on. \"Diploma\" and \"Certificate\" count only as the level they give (\"Diploma in Nursing\" = \"Certificate in Nursing\"). An equal degree earns all its units, however it is split between studyType and area. Levels must agree (\"other\", for degree words that name no level, agrees only with \"other\"; a side with no studyType and no level word in area has no level, so leaving out a printed studyType, or adding one that is not printed, loses that unit; two different known levels do not pair at all); the type (Science, Arts ...) is a wildcard when one side omits it. When the degrees differ: both fields on both sides = one unit for level + type and one for the field of study together with any other degree words (\"Honours\", \"Executive\"); one field on both sides = no unit (\"Executive MBA\" is not \"MBA\"); one field against two = its unit when it equals either of the other side's fields or holds only a level and type that agree. Copy every printed degree word exactly once across studyType and area."
               },
               "score": {
-                "type": ["string", "null"],
-                "description": "GPA, grade, or other academic metric"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "GPA, grade, percentage or class as printed (e.g. \"3.8/4.0\", \"GPA: 3.8/4.0\", \"First Class Honours\", \"86%\"). A leading label word (GPA, CGPA, CPI, SGPA, Grade, Percentage, Marks or Score, with its \":\", \"-\" or \"–\"; not \"—\") and a trailing GPA/CGPA/CPI/SGPA are ignored; everything else in the value counts."
               },
               "startMonth": {
-                "type": ["integer", "null"],
-                "description": "Month study began as an integer 1-12. Null if no start month is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month study started, integer 1-12 (January = 1). Null if no month is printed (year only, season or quarter)."
               },
               "startYear": {
-                "type": ["integer", "null"],
-                "description": "Year study began as a 4-digit integer. Null if no start year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year study started, 4-digit integer. For an ongoing entry (\"2020 - Present\", \"Since 2020\") the printed date is the start. Null if not printed. If only ONE date is printed and the entry is not ongoing, it is the end date (endMonth/endYear), not the start."
               },
               "endMonth": {
-                "type": ["integer", "null"],
-                "description": "Month study ended as an integer 1-12. Null if still studying or no end month is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month study ended or is expected to end, integer 1-12 (an expected completion month goes here too). Null if no end month is printed."
               },
               "endYear": {
-                "type": ["integer", "null"],
-                "description": "Year study ended as a 4-digit integer. Null if still studying or no end year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year study ended or is expected to end, 4-digit integer. A single printed date of a program that is not ongoing goes here, and so does an expected or anticipated completion date (\"Expected May 2026\") even though currentlyStudyHere is true. Null if ongoing with no printed end date, or if no end is printed. (When the ground truth has a single date, that date is also accepted in the start fields or in both.)"
               },
               "currentlyStudyHere": {
-                "type": ["boolean", "null"],
-                "description": "true if currently studying here (end date is 'Expected', 'Present', or 'Current'). false otherwise."
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "true if the person is studying here now: \"Present\", \"Current\", an open range, or an expected or anticipated completion (\"Expected May 2026\" -> true, with the expected date in endMonth/endYear). Otherwise false or null (they count the same: only true is compared)."
               },
               "location": {
-                "type": ["string", "null"],
-                "description": "Full location of the institution as written in the resume (e.g. 'Cambridge, MA, USA', 'Oxford, UK'). Extract verbatim. Null if no location is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "UNSCORED (never compared). The full location of the entry as printed (e.g. \"New York, NY, USA\"). Null if none."
               },
               "city": {
-                "type": ["string", "null"],
-                "description": "City where institution is located"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "City (or town/district) part of the location printed with the institution, as printed. city, state and country are compared as one set of parts, ignoring case: a part in another slot is not penalized, a missing or extra part is. Every printed part must be its own value (\"Austin, TX\" in city matches neither part); copy parts as printed (no expansion such as \"NY\" -> \"New York\", no translation) and do not infer a part that is not printed (no country from a city)."
               },
               "state": {
-                "type": ["string", "null"],
-                "description": "State, province, or region where institution is located. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "State, province or region part of the location printed with the institution, as printed (e.g. \"NY\" from \"New York, NY\"). Null if not printed. Compared as part of the location set (see city)."
               },
               "country": {
-                "type": ["string", "null"],
-                "description": "Country where institution is located"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Country part of the location printed with the institution, as printed (e.g. \"USA\" from \"New York, NY, USA\"). Null if not printed; never inferred. Compared as part of the location set (see city)."
               },
               "description": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "List of education bullet points — coursework, honors, activities, etc. Do NOT include information already captured in other fields (score/GPA, institution, area, studyType, dates, city, country)."
+                "description": "Lines printed under the entry: coursework, honours, thesis, activities and student clubs, one string per printed bullet or line, verbatim. Not the GPA, institution, degree, dates or location. Compared as an unordered set of lines: order is not scored, and list markers at the start of a line are ignored (one bullet glyph or symbol such as • ▪ ➤ ◆ ✔ 🚀, with or without a space; a dash or \"*\" followed by a space or tab; \"1.\", \"1)\" or \"(1)\" with one or two digits, followed by a space or tab and a non-digit); leave them out. Merging or splitting lines is credited as the smaller line count only when the entry's lines, joined in order, are otherwise identical and one side's line breaks are a subset of the other's (a moved break or a merge combined with a reordering is not credited); otherwise the merged or split lines count as missed and extra.",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -264,79 +427,124 @@
     },
     "projects": {
       "type": "object",
+      "description": "Projects from a dedicated projects section. Empty items list if the resume has none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of projects from dedicated project sections",
+          "description": "One item per project, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "name": {
-                "type": ["string", "null"],
-                "description": "Name or title of the project"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: projects are paired on name. Project name or title exactly as printed."
               },
               "description": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "List of project bullet points — details, technologies used, and accomplishments. Each array element is one bullet."
+                "description": "Bullet points or lines of the project, one string per printed bullet or paragraph, verbatim. Compared as an unordered set of lines: order is not scored, and list markers at the start of a line are ignored (one bullet glyph or symbol such as • ▪ ➤ ◆ ✔ 🚀, with or without a space; a dash or \"*\" followed by a space or tab; \"1.\", \"1)\" or \"(1)\" with one or two digits, followed by a space or tab and a non-digit); leave them out. Merging or splitting lines is credited as the smaller line count only when the entry's lines, joined in order, are otherwise identical and one side's line breaks are a subset of the other's (a moved break or a merge combined with a reordering is not credited); otherwise the merged or split lines count as missed and extra.",
+                "items": {
+                  "type": "string"
+                }
               },
               "startYear": {
-                "type": ["integer", "null"],
-                "description": "Year the project started as a 4-digit integer. Null if no start year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the project started, 4-digit integer. For an ongoing entry (\"2020 - Present\", \"Since 2020\") the printed date is the start. Null if not printed. If only ONE date is printed and the entry is not ongoing, it is the end date (endMonth/endYear), not the start."
               },
               "endYear": {
-                "type": ["integer", "null"],
-                "description": "Year the project ended as a 4-digit integer. Null if the project is ongoing or no end year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the project ended, 4-digit integer; a single printed date of an entry that is not ongoing goes here. Null if ongoing (inProgress true) or if no end is printed. (When the ground truth has a single date, that date is also accepted in the start fields or in both.)"
               },
               "url": {
                 "type": "object",
+                "description": "UNSCORED (never compared). Link printed with the project (project page or repository): href = the URL if it is printed (otherwise null), label = the visible text of the link. Null if no link is printed.",
                 "properties": {
                   "href": {
-                    "type": ["string", "null"],
-                    "description": "URL address (link target)"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). URL as printed; null if only the linked text is visible."
                   },
                   "label": {
-                    "type": ["string", "null"],
-                    "description": "The visible display text or label for this URL as shown in the resume."
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). Visible text of the link as printed."
                   }
-                },
-                "description": "Project link or repository URL, if present in the resume. Set both href and label to null if no link is present."
+                }
               },
               "companyName": {
-                "type": ["string", "null"],
-                "description": "Organization associated with the project. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Organization or client the project was for, as printed. Null if not printed."
               },
               "location": {
-                "type": ["string", "null"],
-                "description": "Full location of the project as written in the resume. Extract verbatim. Null if no location is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "UNSCORED (never compared). The full location of the entry as printed (e.g. \"New York, NY, USA\"). Null if none."
               },
               "city": {
-                "type": ["string", "null"],
-                "description": "City where the project was based. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "City (or town/district) part of the location printed with the project, as printed. city, state and country are compared as one set of parts, ignoring case: a part in another slot is not penalized, a missing or extra part is. Every printed part must be its own value (\"Austin, TX\" in city matches neither part); copy parts as printed (no expansion such as \"NY\" -> \"New York\", no translation) and do not infer a part that is not printed (no country from a city)."
               },
               "state": {
-                "type": ["string", "null"],
-                "description": "State, province, or region where the project was based. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "State, province or region part of the location printed with the project, as printed (e.g. \"NY\" from \"New York, NY\"). Null if not printed. Compared as part of the location set (see city)."
               },
               "country": {
-                "type": ["string", "null"],
-                "description": "Country where the project was based. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Country part of the location printed with the project, as printed (e.g. \"USA\" from \"New York, NY, USA\"). Null if not printed; never inferred. Compared as part of the location set (see city)."
               },
               "startMonth": {
-                "type": ["integer", "null"],
-                "description": "Month the project started (1-12). Null if not stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the project started, integer 1-12 (January = 1). Null if no month is printed (year only, season or quarter)."
               },
               "endMonth": {
-                "type": ["integer", "null"],
-                "description": "Month the project ended (1-12). Null if not stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the project ended, integer 1-12. Null if ongoing or if no end month is printed."
               },
               "inProgress": {
-                "type": ["boolean", "null"],
-                "description": "true if the project is ongoing. Null if not stated."
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "true if the project is ongoing (\"Present\", \"Ongoing\", an open range). Otherwise false or null (they count the same: only true is compared)."
               }
             }
           }
@@ -345,55 +553,81 @@
     },
     "personalSummary": {
       "type": "object",
+      "description": "The summary, profile or objective section (normally near the top). A second summary-like section with its own heading goes to customSections.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "text": {
-          "type": ["string", "null"],
-          "description": "The candidate's professional summary, profile, or objective. Preserve paragraph boundaries from the source using double newlines between paragraphs. If the source section is written as bullets, preserve each bullet as a list item rather than collapsing into prose. Do not merge multiple paragraphs into one block."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The summary as printed, verbatim: one line per printed paragraph or bullet, lines separated by newlines (blank lines allowed); never break a line inside a paragraph or bullet. Compared as a set of lines; the same text broken into lines differently still counts in full. Leave list markers out (they are ignored only when at least two lines carry one). Null if there is no summary."
         }
       }
     },
     "certifications": {
       "type": "object",
+      "description": "Certifications, certificates, licenses/licences, credentials and professional training or courses. Decided by the printed heading, in this order: (1) a heading that names certifications or certificates goes here with every item, including admission, membership or license lines under it (\"Bar Admissions & Certifications\", \"Certifications & Professional Memberships\"); if it also names another standard section (\"Certifications & Skills\"), it is split item by item; (2) otherwise a heading that names admissions, memberships, affiliations, professional associations, military service, military education or military training (\"Bar Admissions\", \"Admissions & Licenses\", \"Military Education & Training\") goes to customSections; (3) otherwise a heading that names licenses, tickets, credentials, accreditations, registrations, professional qualifications, training, courses or professional development goes here when its items are credentials, training or courses the person holds or completed, unless the section is written as prose paragraphs; other uses of these words follow meaning (\"Training Courses Offered\" listing courses the person teaches goes to customSections). Also certificates, licenses or training courses printed inside the education section that are not degree or diploma programs, and the certificates of a section that mixes them with other items (see awards). A membership, affiliation or admission printed inside any other section stays there. Lines printed under a certification (course content, outcomes) go to customSections under the printed heading of the section that holds them. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "Extract all certifications, licenses, and professional credentials mentioned anywhere in the resume — from dedicated certification sections, education sections, or standalone mentions.",
+          "description": "One item per printed certification, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "name": {
-                "type": ["string", "null"],
-                "description": "Name of the certification"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: certifications are paired on name + issuer. Certification, license or course name exactly as printed."
               },
               "issuer": {
-                "type": ["string", "null"],
-                "description": "Organization that issued the certification"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: issuing organization, only if printed with the item; null otherwise. Never inferred from the certification name: a missing or invented issuer loses the entry."
               },
               "date": {
-                "type": ["string", "null"],
-                "description": "Date of certification as written in the resume"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Date as printed, as a string (e.g. \"Mar 2023\", \"2019\", \"2019 - 2021\"). Not converted to integers."
               },
               "url": {
                 "type": "object",
+                "description": "UNSCORED (never compared). Link printed with the certification: href = the URL if it is printed (otherwise null), label = the visible text of the link. Null if no link is printed.",
                 "properties": {
                   "href": {
-                    "type": ["string", "null"],
-                    "description": "URL address (link target)"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). URL as printed; null if only the linked text is visible."
                   },
                   "label": {
-                    "type": ["string", "null"],
-                    "description": "The visible display text or label for this URL as shown in the resume."
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). Visible text of the link as printed."
                   }
-                },
-                "description": "URL or link associated with the certification, if present in the resume. Set both href and label to null if no link is shown."
+                }
               }
             }
           }
@@ -402,46 +636,68 @@
     },
     "awards": {
       "type": "object",
+      "description": "Named awards, honours, prizes, scholarships, fellowships, distinctions, decorations and recognitions granted to the person, from a section headed Awards, Honors/Honours, Recognition, Prizes, Scholarships or similar, and the named awards of an Achievements section. A separately headed section that mixes items of a standard owner with other items (an Achievements or \"Awards & Achievements\" section with named awards, certificates or languages next to things the person did) is split item by item: each named award (the award's name, with its date, awarder or a short note; not a sentence about what the person did) goes here, each certificate to certifications, each language to languages, and the other items stay together in customSections under the printed heading. Job results stay in experience; volunteer and board roles go to volunteering. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "Extract awards, honors, and recognitions from dedicated awards/honors sections. Only include named awards or formal recognitions — not job accomplishments from experience bullets or volunteer positions.",
+          "description": "One item per award, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "title": {
-                "type": ["string", "null"],
-                "description": "Name of the award"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: awards are paired on title. Name of the award or honour exactly as printed."
               },
               "awarder": {
-                "type": ["string", "null"],
-                "description": "Organization that granted the award"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Organization that granted the award, if printed. Null otherwise; never inferred."
               },
               "date": {
-                "type": ["string", "null"],
-                "description": "Date of award as written in the resume"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Date as printed, as a string. Not converted to integers."
               },
               "summary": {
-                "type": ["string", "null"],
-                "description": "Additional description of the award. Null if none."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Other text printed with the award, verbatim. Compared as one string. Null if none."
               },
               "url": {
                 "type": "object",
+                "description": "UNSCORED (never compared). Link printed with the award: href = the URL if it is printed (otherwise null), label = the visible text of the link. Null if no link is printed.",
                 "properties": {
                   "href": {
-                    "type": ["string", "null"],
-                    "description": "URL address (link target)"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). URL as printed; null if only the linked text is visible."
                   },
                   "label": {
-                    "type": ["string", "null"],
-                    "description": "The visible display text or label for this URL as shown in the resume."
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). Visible text of the link as printed."
                   }
-                },
-                "description": "URL or link associated with the award, if present in the resume. Set both href and label to null if no link is shown."
+                }
               }
             }
           }
@@ -450,69 +706,111 @@
     },
     "volunteering": {
       "type": "object",
+      "description": "Volunteer, community-service and board roles from a volunteering, community or board section (\"Board & Advisory\", \"Board Memberships\"). Student clubs and extracurricular activities are not volunteering; in a section that mixes them with volunteer roles (\"Leadership and Volunteering\"), the volunteer roles come here and the other items go to customSections under the printed heading. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of volunteer positions from dedicated volunteering, community involvement, or board membership sections. Only include genuine volunteer roles — not student clubs, extracurricular activities, sports, or workshop attendance.",
+          "description": "One item per role, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "organization": {
-                "type": ["string", "null"],
-                "description": "Name of the volunteer organization"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: volunteering entries are paired on organization + position. Organization name exactly as printed."
               },
               "position": {
-                "type": ["string", "null"],
-                "description": "Volunteer role or title"
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pairing field: volunteer role or title exactly as printed."
               },
               "description": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "List of volunteering bullet points. Strip bullet symbols but preserve the complete visible text."
+                "description": "Bullet points of the role, one string per printed bullet, verbatim. Compared as an unordered set of lines: order is not scored, and list markers at the start of a line are ignored (one bullet glyph or symbol such as • ▪ ➤ ◆ ✔ 🚀, with or without a space; a dash or \"*\" followed by a space or tab; \"1.\", \"1)\" or \"(1)\" with one or two digits, followed by a space or tab and a non-digit); leave them out. Merging or splitting lines is credited as the smaller line count only when the entry's lines, joined in order, are otherwise identical and one side's line breaks are a subset of the other's (a moved break or a merge combined with a reordering is not credited); otherwise the merged or split lines count as missed and extra.",
+                "items": {
+                  "type": "string"
+                }
               },
               "startYear": {
-                "type": ["integer", "null"],
-                "description": "Year volunteering started as a 4-digit integer. Null if no start year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the volunteer role started, 4-digit integer. For an ongoing entry (\"2020 - Present\", \"Since 2020\") the printed date is the start. Null if not printed. If only ONE date is printed and the entry is not ongoing, it is the end date (endMonth/endYear), not the start."
               },
               "endYear": {
-                "type": ["integer", "null"],
-                "description": "Year volunteering ended as a 4-digit integer. Null if still volunteering or no end year is stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Year the volunteer role ended, 4-digit integer; a single printed date of an entry that is not ongoing goes here. Null if ongoing (currentlyVolunteerHere true) or if no end is printed. (When the ground truth has a single date, that date is also accepted in the start fields or in both.)"
               },
               "currentlyVolunteerHere": {
-                "type": ["boolean", "null"],
-                "description": "true if currently volunteering here. false otherwise."
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "true if the role is ongoing (\"Present\", \"Current\", \"Since 2020\", an open range). Otherwise false or null (they count the same: only true is compared)."
               },
               "startMonth": {
-                "type": ["integer", "null"],
-                "description": "Month volunteering started (1-12). Null if not stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the volunteer role started, integer 1-12 (January = 1). Null if no month is printed (year only, season or quarter)."
               },
               "endMonth": {
-                "type": ["integer", "null"],
-                "description": "Month volunteering ended (1-12). Null if not stated."
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Month the volunteer role ended, integer 1-12. Null if ongoing or if no end month is printed."
               },
               "location": {
-                "type": ["string", "null"],
-                "description": "Full location of the volunteer work as written in the resume (e.g. 'New York, USA', 'Remote'). Extract verbatim. Null if no location is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "UNSCORED (never compared). The full location of the entry as printed (e.g. \"New York, NY, USA\"). Null if none."
               },
               "city": {
-                "type": ["string", "null"],
-                "description": "City where volunteering took place. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "City (or town/district) part of the location printed with the volunteer role, as printed. city, state and country are compared as one set of parts, ignoring case: a part in another slot is not penalized, a missing or extra part is. Every printed part must be its own value (\"Austin, TX\" in city matches neither part); copy parts as printed (no expansion such as \"NY\" -> \"New York\", no translation) and do not infer a part that is not printed (no country from a city)."
               },
               "state": {
-                "type": ["string", "null"],
-                "description": "State, province, or region where volunteering took place. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "State, province or region part of the location printed with the volunteer role, as printed (e.g. \"NY\" from \"New York, NY\"). Null if not printed. Compared as part of the location set (see city)."
               },
               "country": {
-                "type": ["string", "null"],
-                "description": "Country where volunteering took place. Null if not stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Country part of the location printed with the volunteer role, as printed (e.g. \"USA\" from \"New York, NY, USA\"). Null if not printed; never inferred. Compared as part of the location set (see city)."
               },
               "summary": {
-                "type": ["string", "null"],
-                "description": "Introductory text about the volunteer role. Null if none."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Unbulleted prose printed in the entry, verbatim. Compared as one string. If it is written as the first description line(s) instead (or the ground truth did so), the scorer moves those lines here when, joined, they equal the prose. Null if none."
               }
             }
           }
@@ -521,25 +819,34 @@
     },
     "skills": {
       "type": "object",
+      "description": "Skill keywords from the resume's skills section: every section whose heading names skills (\"Skills\", \"Technical Skills\", \"Key Skills\", \"Core Skills\", \"IT Skills\", \"Top Skills\") or is a skills synonym (\"Technical Proficiency\", \"Tech Stack\", \"Toolbox\", \"Toolkit\"), and an unheaded block of skill keywords; if the resume has none of these, the first separately headed section of skill keywords under another heading (\"Core Competencies\", \"Areas of Expertise\", \"Key Strengths\", \"Know-How\"). Any other separately headed skill-like section goes to customSections under its printed heading. A skills-type section, or a group under its own printed label, whose items are mostly sentences (what the person did or does, e.g. \"Created and deployed control frameworks ...\", or a description of the person, e.g. \"Able to work under pressure\") goes whole to customSections. Spoken languages go to languages. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of skill categories extracted from the resume. If the resume already groups skills under category headings (e.g. 'Tools: Git, Docker'), preserve that structure exactly.",
+          "description": "One object per printed category, or a single object for an uncategorized list.",
           "items": {
             "type": "object",
             "properties": {
               "category": {
-                "type": ["string", "null"],
-                "description": "Skill category or group name. FIRST check if the resume already has categories in the format 'CategoryName: Skill1, Skill2, ...' (e.g. 'Programming Languages: Python, Java'). If existing categories are found, use those exact category names. If the resume lists skills as a flat or comma-separated list without explicit category labels, use 'Skills' as the default category name. Do NOT use the section heading as a category name. Do not use a single skill name as the category."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "UNSCORED (never compared). Category label printed inside the skills section, as printed (\"Tools\" from \"Tools: Git, Docker\", or a sub-heading; the heading of a second skills-named section). \"Skills\" or null for an uncategorized list. Never a skill name."
               },
               "skills": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "List of individual skills in this category. Skills should be concise keyword-style items, e.g. 'Python', 'Project Management', 'Statistical Process Control (SPC)'. Do NOT include full sentences or competency statements. Only include skills explicitly present in the resume — no guessing or inventing. Preserve original casing. Each skill must appear in exactly one category. Do not repeat a skill across categories."
+                "description": "Every item printed under this category, one string per printed item, verbatim: names of skills, tools, technologies, methods or areas of knowledge (words or noun or \"-ing\" phrases, with any bracketed detail, e.g. \"Python\", \"Statistical Process Control (SPC)\", \"Excellent communication skills\"). Keep an occasional longer phrase of a keyword section as printed; never cut a sentence into keywords. Items separated by \"•\", \"·\" or line breaks are separate strings. The scorer splits every string at each \",\" and \"|\" on both sides (also inside brackets; not at \"，\", \"、\" or \";\"), so \"Python, Java\" as one string equals \"Python\" + \"Java\"; keep a bracketed group as printed in one string (\"MS Office (Word, Excel)\"). Compared like other text (letter case counts, except that ALL-CAPS text (two or more letters, all capitals) equals the same text in any case); list markers at the start are ignored; a repeated skill counts once (repeats are found ignoring case and the first spelling is kept).",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -548,32 +855,48 @@
     },
     "publications": {
       "type": "object",
+      "description": "Publications and research papers from a publications or research section. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of publications or research papers from dedicated publications or research sections. Do NOT extract publications mentioned within experience or education descriptions.",
+          "description": "One item per publication, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "name": {
-                "type": ["string", "null"],
-                "description": "Title of the publication."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Title of the publication exactly as printed. Publications are paired on the best overall match of their fields."
               },
               "publisher": {
-                "type": ["string", "null"],
-                "description": "Journal, conference, or publisher name."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Journal, conference or publisher as printed. Null if not printed."
               },
               "date": {
-                "type": ["string", "null"],
-                "description": "Publication date as written in the resume."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Publication date as printed, as a string. Not converted to integers."
               },
               "summary": {
-                "type": ["string", "null"],
-                "description": "Brief description or abstract of the publication."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Other text printed with the publication (authors, volume, pages, a description), verbatim. Compared as one string. Null if none."
               }
             }
           }
@@ -582,24 +905,34 @@
     },
     "languages": {
       "type": "object",
+      "description": "Spoken or written natural languages, wherever printed (also a language line inside a skills or Personal Details section). Programming languages go to skills. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of spoken/written languages from dedicated language sections. Only natural languages (English, Spanish, Mandarin, etc.) — NOT programming languages (those go in skills).",
+          "description": "One item per language, in printed order.",
           "items": {
             "type": "object",
             "properties": {
               "name": {
-                "type": ["string", "null"],
-                "description": "Language name only, without proficiency level (e.g. 'English', 'Spanish', 'Mandarin' — NOT 'English (Native)'). Copy VERBATIM from the resume."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The language only, as printed (\"English\", not \"English (Native)\"). One item per language: split \"English, Spanish and French\" into three items; names joined with \"/\" (\"Urdu / Punjabi\") stay one item. The scorer also accepts \"English (Native)\", \"English - C1\" or \"English: Fluent\" written here when level is empty and the last part in brackets, the part after a colon or the part after a dash with spaces is a proficiency (native, fluent, C1, nativo, courant ...; \"Chinese (Mandarin) - Native\" = \"Chinese (Mandarin)\" + \"Native\"); otherwise that part stays in the name (\"Chinese (Mandarin)\", \"Serbo-Croatian\"). Put a printed level in level. Languages are paired on the best overall match."
               },
               "level": {
-                "type": ["string", "null"],
-                "description": "Proficiency or fluency level as written in the resume (e.g. 'Native', 'Fluent', 'Intermediate', 'B2', 'Professional Working'). Copy VERBATIM. Null if no level is stated."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Proficiency exactly as printed (e.g. \"Native\", \"Fluent\", \"C1\", \"fluent, TOEIC 965\"). Null if no level is printed. Compared only where the ground truth records a level."
               }
             }
           }
@@ -608,20 +941,27 @@
     },
     "interests": {
       "type": "object",
+      "description": "Hobbies and interests from an interests or hobbies section. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of hobbies or interests from dedicated interests/hobbies sections.",
+          "description": "One item per interest.",
           "items": {
             "type": "object",
             "properties": {
               "name": {
-                "type": ["string", "null"],
-                "description": "Interest or hobby name."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "One interest or hobby per item, as printed."
               }
             }
           }
@@ -630,34 +970,47 @@
     },
     "profiles": {
       "type": "object",
+      "description": "Online profiles other than LinkedIn (GitHub, portfolio, personal website, X/Twitter, Behance, Kaggle ...). LinkedIn goes only to basics.linkedinUrl. Profiles are compared on network only, ignoring case. Empty items list if none.",
       "properties": {
         "sectionTitle": {
-          "type": ["string", "null"],
-          "description": "The exact visible section heading text from the resume for this section. Extract verbatim — do not normalize, translate, or rephrase. null if no heading is visible."
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "UNSCORED (never compared). The section heading as printed. Null if no heading is printed."
         },
         "items": {
           "type": "array",
-          "description": "List of online profile links (GitHub, portfolio, Twitter, etc.) from the resume. LinkedIn goes in basics.linkedinUrl, not here.",
+          "description": "One item per profile.",
           "items": {
             "type": "object",
             "properties": {
               "network": {
-                "type": ["string", "null"],
-                "description": "Platform name (e.g. 'GitHub', 'Twitter', 'Portfolio')."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The name printed with the link (\"GitHub\", \"Portfolio\", \"Blog\"); if only the URL is printed, the name of the site it points to (github.com -> \"GitHub\", orcid.org -> \"ORCID\"), or \"Portfolio\" for a personal website with no printed name. Compared ignoring case. Profiles are paired on the best overall match."
               },
               "url": {
                 "type": "object",
+                "description": "UNSCORED (never compared). Link printed for the profile: href = the URL if it is printed (otherwise null), label = the visible text of the link. Null if no link is printed.",
                 "properties": {
                   "href": {
-                    "type": ["string", "null"],
-                    "description": "URL address (link target)"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). URL as printed; null if only the linked text is visible."
                   },
                   "label": {
-                    "type": ["string", "null"],
-                    "description": "The visible display text or label for this URL as shown in the resume. For profile links, use the network name (e.g. 'LinkedIn', 'GitHub')."
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "UNSCORED (never compared). Visible text of the link as printed."
                   }
-                },
-                "description": "Profile URL link. Set both href and label to null if no link is present."
+                }
               }
             }
           }
@@ -666,33 +1019,43 @@
     },
     "customSections": {
       "type": "array",
-      "description": "Extract any resume sections that do not fit the standard categories above (basics, experience, education, projects, personalSummary, certifications, awards, volunteering, skills, publications, languages, interests, profiles). Each entry represents one non-standard section found in the resume.",
+      "description": "Every printed section that has no standard owner, one object per section, under its printed heading: e.g. Key Achievements / Achievements / Accomplishments listing things the person did, Professional Memberships, Affiliations, Professional Associations, Bar Admissions, Admissions & Licenses, Military Education & Training, Military Service, Security Clearance, Speaking Engagements, Patents, Personal Details, References, Declaration, Additional Information, a career-summary list of roles without responsibilities, a separately headed extracurricular-activities section, a second summary-like section, a skill-like section that is not the skills section, and a skills-type section written in sentences. Also the other items of a section split item by item (see awards and volunteering), and lines printed under a certification (under the printed heading of the section that holds them). Never copy content that a standard section holds. A Personal Details section keeps here only its lines that fill no other field (marital status, place of birth, notice period, driving licence ...): a line that fills a basics field (contact details, location, dob, gender, nationality, address, postalCode) goes to basics only and a language line to languages only; there is no custom section if no such line remains. Empty list if none.",
       "items": {
         "type": "object",
         "properties": {
           "sectionTitle": {
-            "type": ["string", "null"],
-            "description": "The heading text of this section as it appears in the resume. Extract verbatim — do not normalize or translate — but strip trailing punctuation such as colons or periods. REQUIRED for every custom section. A Career Summary that is not the dedicated summary/profile section must be represented here with sectionTitle exactly 'Career Summary'. Set to null if the section has no distinct heading."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Pairing field: custom sections are paired on sectionTitle. The heading exactly as printed: do not rename, translate or normalize it; a trailing \":\" or \".\" does not matter, and letter case counts, except that ALL-CAPS text (two or more letters, all capitals) equals the same text in any case. Write a letter-spaced heading as normal words (\"A C H I E V E M E N T S\" -> \"ACHIEVEMENTS\"). Null only if the section has no printed heading."
           },
           "summary": {
-            "type": ["string", "null"],
-            "description": "Continuous prose text (sentences and paragraphs). Use when the content reads as flowing text, not a list of entries. Copy VERBATIM. A section can have both summary and description if both are present."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Prose paragraphs of the section, verbatim, one line per paragraph. Compared as one string. If the ground truth has this prose in summary and the output wrote the same text as the first description line(s), it still counts (ground-truth list items written as one summary paragraph count as one merged line); do not split one section's prose between summary and description. Null if none."
           },
           "description": {
             "type": "array",
-            "items": {"type": "string"},
-            "description": "Array of discrete entries — bulleted, numbered, OR unbulleted list items (one entry per line). Use when the content is a list of distinct items. Copy each VERBATIM (strip only the bullet symbol). A section can have both description and summary if both are present."
+            "description": "List items of the section, one string per printed item or line, verbatim, in printed order; a sub-heading is its own item, in place. Plain text, no markdown. Compared as an unordered set of lines: order is not scored, and list markers at the start of a line are ignored (one bullet glyph or symbol such as • ▪ ➤ ◆ ✔ 🚀, with or without a space; a dash or \"*\" followed by a space or tab; \"1.\", \"1)\" or \"(1)\" with one or two digits, followed by a space or tab and a non-digit); leave them out. Merging or splitting lines is credited as the smaller line count only when the entry's lines, joined in order, are otherwise identical and one side's line breaks are a subset of the other's (a moved break or a merge combined with a reordering is not credited); otherwise the merged or split lines count as missed and extra.",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
     },
     "layout": {
       "type": "array",
-      "description": "A vertical sequence of layout blocks representing how sections appear on the page. Each element is either a full-width block (a list of section name strings) or a column group (a list of lists, one per column from left to right). For single-column resumes, use one full-width block listing all sections top to bottom, e.g. [[\"basics\", \"summary\", \"experience\", \"education\", \"skills\"]]. For multi-column or sidebar resumes, use a column group for the side-by-side portion, e.g. [[\"basics\"], [[\"skills\", \"languages\"], [\"experience\", \"projects\"]], [\"interests\"]] where the first inner list is the left column and the second is the right column. Use standard keys for standard sections (summary, experience, education, skills, projects, certifications, awards, volunteering, publications, profiles, languages, interests) and the exact heading text for any custom/non-standard sections. Only include sections that actually exist in the document.",
+      "description": "UNSCORED (never compared). The sections in reading order as a list of blocks, top to bottom; each block is a list of section names (standard keys such as \"basics\", \"summary\", \"experience\", \"education\", \"skills\"; the printed heading for a custom section). For a multi-column part, give one block per column, left column first. Only sections the resume has.",
       "items": {
         "type": "array",
-        "items": {"type": "string"},
-        "description": "A layout block: a list of section name strings for a full-width block, or use nested arrays for column groups."
+        "description": "A block: the names of the sections in it, top to bottom.",
+        "items": {
+          "type": "string"
+        }
       }
     }
   }

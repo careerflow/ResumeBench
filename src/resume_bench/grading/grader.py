@@ -32,19 +32,39 @@ def _load_pipeline_results(pipeline_name: str, split: str) -> dict[str, dict]:
     return results
 
 
+SCORERS = ("v2", "strict")
+
+
+def grades_path(pipeline: str, split: str, scorer: str):
+    """Each scorer writes to its own grades folder, so grades from different scorers never mix."""
+    return settings.output_dir / pipeline / split / "grades" / scorer
+
+
+def _scorer(name: str):
+    """Return the scoring function: ``v2`` (canonical comparison, default) or ``strict`` (the original release)."""
+    if name == "v2":
+        from resume_bench.grading.canonical import score_resume_v2
+
+        return lambda gt, pred, sections, gate=1.0: score_resume_v2(gt, pred, gate=gate)
+    if name == "strict":
+        from resume_bench.grading.strict import score_resume_strict
+
+        return score_resume_strict
+    raise ValueError(f"unknown scorer {name!r}; choose one of {SCORERS}")
+
+
 def grade_single_strict(
     ground_truth: dict[str, Any],
     prediction: dict[str, Any],
     gate: float = 1.0,
+    scorer: str = "v2",
 ) -> dict:
     """Grade a single resume using ResumeBench scoring.
 
     Returns a dict with ``f1``, ``precision``, ``recall`` (section-averaged),
     ``correct``, ``expected``, ``predicted``, and ``sections``.
     """
-    from resume_bench.grading.strict import score_resume_strict
-
-    return score_resume_strict(
+    return _scorer(scorer)(
         ground_truth,
         prediction,
         SECTIONS,
@@ -56,9 +76,10 @@ def grade_pipelines_strict(
     pipeline_names: list[str],
     split: str = "test",
     gate: float = 1.0,
+    scorer: str = "v2",
 ) -> dict[str, dict[str, Any]]:
     """Grade multiple pipelines using ResumeBench scoring."""
-    from resume_bench.grading.strict import score_resume_strict
+    score_resume_strict = _scorer(scorer)
 
     cases = load_split(split)
     gt_by_id = {c.resume_id: c.ground_truth for c in cases}
@@ -77,7 +98,7 @@ def grade_pipelines_strict(
 
             if pred is None:
                 errors += 1
-                scores.append({"resume_id": resume_id, "completed": False, "f1": 0.0})
+                scores.append({"resume_id": resume_id, "completed": False, "f1": 0.0, "scorer": scorer})
                 continue
 
             result = score_resume_strict(
@@ -88,6 +109,7 @@ def grade_pipelines_strict(
             )
             result["resume_id"] = resume_id
             result["completed"] = True
+            result["scorer"] = scorer
             scores.append(result)
 
         completed_count = sum(1 for s in scores if s.get("completed"))
@@ -99,7 +121,7 @@ def grade_pipelines_strict(
         total_expected = sum(s.get("expected", 0) for s in scores)
         total_predicted = sum(s.get("predicted", 0) for s in scores)
 
-        grades_dir = settings.output_dir / name / split / "grades"
+        grades_dir = grades_path(name, split, scorer)
         grades_dir.mkdir(parents=True, exist_ok=True)
 
         for s in scores:
