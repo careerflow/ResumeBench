@@ -63,11 +63,17 @@ DATES AND STRUCTURED ENTRIES:
   true with null end month/year.
 - If only a year is given (e.g. "2023"), set the year field and leave the month
   field null.
-- If only ONE date appears for a role/education entry (not a range), treat it as
-  the end date (endMonth/endYear). Leave start fields null.
+- If only ONE date appears for an education entry (not a range), treat it as the
+  graduation date (endMonth/endYear). Leave start fields null.
+- If only ONE date appears for an experience, volunteering, or project entry (not
+  a range), treat it as the start date (startMonth/startYear). Leave end fields
+  null.
 - Abbreviated year formats: "'21" = 2021. "Jun'21" = June 2021.
 - Seasons or quarters ("Summer 2022", "Q3 2021"): set the year only, leave month
   null. Do NOT convert to a specific month.
+- For education studyType: extract the degree type as written but drop possessive
+  markers. "Bachelor's" → "Bachelor", "Master's" → "Master". Abbreviations like
+  "B.S.", "M.A.", "PhD" stay as-is.
 - For multi-entry sections, start a new item only when a new entry identity
   appears (employer, institution, organization, project). Associate every
   following bullet, paragraph, and continuation with that item until the next
