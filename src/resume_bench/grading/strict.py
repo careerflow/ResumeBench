@@ -112,7 +112,7 @@ SECTION_SCHEMA_FIELDS: dict[str, list[str]] = {
         "summary",
     ],
     "publications": ["name", "publisher", "date", "summary"],
-    "languages": ["name"],
+    "languages": ["name", "level"],
     "interests": ["name"],
     "profiles": ["network", "url"],
     "customSections": ["sectionTitle", "summary"],
